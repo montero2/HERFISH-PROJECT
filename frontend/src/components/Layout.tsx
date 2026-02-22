@@ -39,8 +39,7 @@ const Layout: React.FC = () => {
               />
             </div>
             <div className="leading-none">
-              <span className="block font-extrabold tracking-wide text-xl text-blue-900">HERFISH</span>
-              <span className="block font-semibold text-xs tracking-[0.35em] text-blue-700 mt-1">LEGACY</span>
+              <span className="block font-extrabold tracking-wide text-xl text-blue-900">HERFISH LEGACY</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
