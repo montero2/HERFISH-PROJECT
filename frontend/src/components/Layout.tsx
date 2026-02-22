@@ -38,8 +38,9 @@ const Layout: React.FC = () => {
                 className="h-10 w-10 object-contain"
               />
             </div>
-            <div className="leading-none">
-              <span className="block font-extrabold tracking-wide text-xl text-blue-900">HERFISH LEGACY</span>
+            <div className="leading-none" aria-label="HERFISH LEGACY">
+              <span className="block font-extrabold tracking-wide text-xl text-blue-900">HERFISH</span>
+              <span className="block mt-1 text-[11px] font-semibold tracking-[0.42em] text-blue-800">LEGACY</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -85,7 +86,10 @@ const Layout: React.FC = () => {
                 className="h-7 w-7 object-contain"
               />
             </div>
-            <span className="font-black text-lg text-blue-900 tracking-wide">HERFISH LEGACY</span>
+            <div className="leading-none" aria-label="HERFISH LEGACY">
+              <span className="block font-extrabold text-base text-blue-900 tracking-wide">HERFISH</span>
+              <span className="block mt-0.5 text-[10px] font-semibold tracking-[0.3em] text-blue-800">LEGACY</span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button type="button" aria-label="Alerts" className="p-2 text-gray-600 hover:text-blue-600">
