@@ -1,5 +1,6 @@
 import React from 'react'
 import { Outlet, Link, useLocation } from 'react-router-dom'
+import logoSymbol from '../assets/logo_symbol.png'
 import {
   BellIcon,
   BoltIcon,
@@ -29,8 +30,18 @@ const Layout: React.FC = () => {
     <div className="flex h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50">
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow">
         <div className="hidden md:flex items-center justify-between px-8 py-4">
-          <div className="flex items-center gap-4">
-            <span className="font-black text-2xl text-blue-900">HERFISH</span>
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 bg-white/80 rounded-xl">
+              <img
+                src={logoSymbol}
+                alt="Herfish Legacy logo"
+                className="h-10 w-10 object-contain"
+              />
+            </div>
+            <div className="leading-none">
+              <span className="block font-extrabold tracking-wide text-xl text-blue-900">HERFISH</span>
+              <span className="block font-semibold text-xs tracking-[0.35em] text-blue-700 mt-1">LEGACY</span>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             {navItems.map((item) => {
@@ -68,7 +79,14 @@ const Layout: React.FC = () => {
             >
               <MenuIcon className="w-6 h-6" />
             </button>
-            <span className="font-black text-lg text-blue-900">HERFISH</span>
+            <div className="p-1 bg-white/80 rounded-lg">
+              <img
+                src={logoSymbol}
+                alt="Herfish Legacy logo"
+                className="h-7 w-7 object-contain"
+              />
+            </div>
+            <span className="font-black text-lg text-blue-900 tracking-wide">HERFISH LEGACY</span>
           </div>
           <div className="flex items-center gap-2">
             <button type="button" aria-label="Alerts" className="p-2 text-gray-600 hover:text-blue-600">
@@ -107,8 +125,15 @@ const Layout: React.FC = () => {
 
       <main className="flex-1 flex flex-col overflow-hidden mt-16 md:mt-20">
         <div className="flex-1 overflow-auto bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50">
-          <div className="p-2 sm:p-4 md:p-8 max-w-full">
-            <Outlet />
+          <div className="min-h-full flex flex-col">
+            <div className="p-2 sm:p-4 md:p-8 max-w-full flex-1">
+              <Outlet />
+            </div>
+            <footer className="px-4 py-3 sm:px-6 border-t border-white/50 bg-white/70 backdrop-blur-sm text-center">
+              <p className="text-xs sm:text-sm font-semibold tracking-wide text-gray-600">
+                MADE BY MOSESTA LIMITED
+              </p>
+            </footer>
           </div>
         </div>
       </main>

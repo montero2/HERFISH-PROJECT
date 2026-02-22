@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -19,20 +19,17 @@ html {
 }
 
 body {
-  font-family: 'Manrope', 'Segoe UI', 'Helvetica', 'Arial', sans-serif;
-  background:
-    radial-gradient(1200px 600px at 0% 0%, #ffe4ef 0%, transparent 55%),
-    radial-gradient(1000px 500px at 100% 100%, #ffdce8 0%, transparent 50%),
-    linear-gradient(135deg, #fff8fb 0%, #fff1f6 45%, #fde7f0 100%);
-  color: #3f2440;
+  font-family: 'Montserrat', 'Segoe UI', 'Helvetica', 'Arial', sans-serif;
+  background: linear-gradient(135deg, #f6f6f6 0%, #fefefe 100%);
+  color: #1e1e1e;
   line-height: 1.6;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-family: 'Montserrat', 'Segoe UI', 'Helvetica', 'Arial', sans-serif;
   font-weight: 700;
   letter-spacing: -0.25px;
-  color: #5a2c54;
+  color: #032c5a;
 }
 
 h1 { font-size: 2rem; }
@@ -56,12 +53,12 @@ input, select, textarea {
 }
 
 a {
-  color: #b23a78;
+  color: #032c5a;
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
-a:hover { color: #8f2f63; }
+a:hover { color: #7a0a21; }
 
 ::-webkit-scrollbar {
   width: 8px;
@@ -74,16 +71,16 @@ a:hover { color: #8f2f63; }
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #d9468f 0%, #b23a78 100%);
+  background: linear-gradient(180deg, #032c5a 0%, #7a0a21 100%);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #c2377d 0%, #942f60 100%);
+  background: linear-gradient(180deg, #022449 0%, #620818 100%);
 }
 
 ::selection {
-  background: #d9468f;
+  background: #032c5a;
   color: white;
 }
 
@@ -91,60 +88,69 @@ button:focus,
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 2px solid #c2377d;
+  outline: 2px solid #032c5a;
   outline-offset: 2px;
 }
 
 /* ============================================
-   THEME REMAP: BLUE/CYAN -> ROSE/BERRY
+   BRAND REMAP: HERFISH LEGACY PALETTE
+   Deep Blue #032C5A, Maroon #7A0A21, Sand Beige #D9C7A1, Light Blue #A9C4DD
    ============================================ */
 
 .from-cyan-500 {
-  --tw-gradient-from: #ec4899 var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgb(236 72 153 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-from: #7a0a21 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(122 10 33 / 0) var(--tw-gradient-to-position) !important;
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
 
 .to-blue-500 {
-  --tw-gradient-to: #be185d var(--tw-gradient-to-position) !important;
+  --tw-gradient-to: #032c5a var(--tw-gradient-to-position) !important;
 }
 
 .from-blue-500 {
-  --tw-gradient-from: #db2777 var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgb(219 39 119 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-from: #032c5a var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(3 44 90 / 0) var(--tw-gradient-to-position) !important;
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
 
 .to-cyan-500 {
-  --tw-gradient-to: #c026d3 var(--tw-gradient-to-position) !important;
+  --tw-gradient-to: #7a0a21 var(--tw-gradient-to-position) !important;
 }
 
 .bg-blue-600 {
-  background-color: #be185d !important;
+  background-color: #032c5a !important;
 }
 
 .hover\:bg-blue-700:hover {
-  background-color: #9d174d !important;
+  background-color: #022449 !important;
 }
 
 .text-blue-600 {
-  color: #be185d !important;
+  color: #032c5a !important;
 }
 
 .text-blue-700 {
-  color: #9d174d !important;
+  color: #032c5a !important;
 }
 
 .border-blue-200 {
-  border-color: #fbcfe8 !important;
+  border-color: #d9c7a1 !important;
 }
 
 .focus\:ring-blue-500:focus {
-  --tw-ring-color: #ec4899 !important;
+  --tw-ring-color: #032c5a !important;
 }
 
 .focus\:ring-cyan-500:focus {
-  --tw-ring-color: #ec4899 !important;
+  --tw-ring-color: #032c5a !important;
+}
+
+.bg-blue-100 {
+  background-color: #e7eef5 !important;
+}
+
+.text-blue-800 {
+  color: #032c5a !important;
 }
 
 /* ============================================
