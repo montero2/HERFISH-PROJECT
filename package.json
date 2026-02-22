@@ -1,0 +1,9 @@
+{
+  "name": "herfish-legacy",
+  "version": "1.0.0",
+  "description": "HERFISH LEGACY - Enterprise Resource Planning System for Fish Supply Chain",
+  "private": true,
+  "keywords": ["ERP", "Fish Supply", "Inventory", "Supply Chain"],
+  "author": "HERFISH LEGACY Team",
+  "license": "MIT"
+}

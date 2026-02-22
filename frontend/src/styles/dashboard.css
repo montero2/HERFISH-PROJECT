@@ -1,0 +1,246 @@
+/* Dashboard Styles */
+.dashboard-container {
+  display: grid;
+  gap: 2rem;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.kpi-card {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border-left: 4px solid;
+}
+
+.kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.kpi-card.primary {
+  border-left-color: #3b82f6;
+}
+
+.kpi-card.success {
+  border-left-color: #10b981;
+}
+
+.kpi-card.warning {
+  border-left-color: #f59e0b;
+}
+
+.kpi-card.danger {
+  border-left-color: #ef4444;
+}
+
+.kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.kpi-icon {
+  font-size: 2rem;
+}
+
+.kpi-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.kpi-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.kpi-change {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.kpi-change.positive {
+  color: #10b981;
+}
+
+.kpi-change.negative {
+  color: #ef4444;
+}
+
+/* Time Range Buttons */
+.time-range-buttons {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.time-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.time-btn:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.time-btn.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border-color: transparent;
+}
+
+/* Data Table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.data-table thead {
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.data-table th {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.2s ease;
+}
+
+.data-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.data-table td {
+  padding: 1rem 1.5rem;
+  color: #4b5563;
+  font-size: 0.875rem;
+}
+
+/* Status Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.badge.success {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #6ee7b7;
+}
+
+.badge.processing {
+  background: #fef3c7;
+  color: #7c2d12;
+  border-color: #fcd34d;
+}
+
+.badge.pending {
+  background: #ffedd5;
+  color: #7c2d12;
+  border-color: #fdba74;
+}
+
+.badge.shipped {
+  background: #bfdbfe;
+  color: #1e3a8a;
+  border-color: #93c5fd;
+}
+
+/* Alerts */
+.alert {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.alert-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.alert.warning {
+  background: #fffbeb;
+  border-left-color: #f59e0b;
+  color: #92400e;
+}
+
+.alert.info {
+  background: #eff6ff;
+  border-left-color: #3b82f6;
+  color: #1e40af;
+}
+
+.alert.error {
+  background: #fef2f2;
+  border-left-color: #ef4444;
+  color: #991b1b;
+}
+
+/* Metrics Sidebar */
+.metrics-sidebar {
+  display: grid;
+  gap: 1rem;
+}
+
+.metric-item {
+  background: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border-left: 3px solid #3b82f6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1f2937;
+}

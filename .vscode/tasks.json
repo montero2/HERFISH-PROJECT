@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Backend Server",
+			"type": "shell",
+			"command": "cd \"C:\\Users\\LENOVO\\Desktop\\New folder (2)\\backend\" && npm install && npm run dev",
+			"isBackground": true,
+			"problemMatcher": [
+				"$tsc"
+			]
+		}
+	]
+}
