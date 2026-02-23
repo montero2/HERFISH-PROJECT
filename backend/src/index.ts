@@ -11,16 +11,55 @@ import procurementRoutes from './routes/procurement'
 import salesRoutes from './routes/sales'
 import financeRoutes from './routes/finance'
 import qualityRoutes from './routes/quality'
+import customerRoutes from './routes/customer'
 
 dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 3000
+const baseOrigins = ['http://localhost:5173', 'http://localhost:5174']
+const envOrigins = `${process.env.FRONTEND_URLS ?? ''},${process.env.FRONTEND_URL ?? ''}`
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+const allowedOrigins = Array.from(new Set([...baseOrigins, ...envOrigins]))
+
+const isPrivateIpv4 = (hostname: string) => {
+  const parts = hostname.split('.').map((part) => Number(part))
+  if (parts.length !== 4 || parts.some((part) => Number.isNaN(part) || part < 0 || part > 255)) {
+    return false
+  }
+
+  if (parts[0] === 10) {
+    return true
+  }
+  if (parts[0] === 192 && parts[1] === 168) {
+    return true
+  }
+  return parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31
+}
+
+const isAllowedLanOrigin = (origin: string) => {
+  try {
+    const parsed = new URL(origin)
+    const isHttp = parsed.protocol === 'http:' || parsed.protocol === 'https:'
+    const isAllowedPort = parsed.port === '5173' || parsed.port === '5174'
+    return isHttp && isAllowedPort && isPrivateIpv4(parsed.hostname)
+  } catch (_error) {
+    return false
+  }
+}
 
 // Middleware
 app.use(helmet())
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || isAllowedLanOrigin(origin)) {
+      callback(null, true)
+      return
+    }
+    callback(new Error(`Origin not allowed by CORS: ${origin}`))
+  },
   credentials: true
 }))
 app.use(morgan('dev'))
@@ -49,6 +88,7 @@ app.get('/api/v1/status', (req, res) => {
       sales: 'ready',
       finance: 'ready',
       quality: 'ready',
+      customer: 'ready',
     }
   })
 })
@@ -60,6 +100,7 @@ app.use('/api/v1/procurement', procurementRoutes)
 app.use('/api/v1/sales', salesRoutes)
 app.use('/api/v1/finance', financeRoutes)
 app.use('/api/v1/quality', qualityRoutes)
+app.use('/api/v1/customer', customerRoutes)
 
 // 404 Handler
 app.use((req, res) => {

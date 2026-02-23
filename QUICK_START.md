@@ -1,63 +1,71 @@
 # HERFISH LEGACY - Fish Supply ERP System
-# Enterprise Resource Planning System for Fish Supply Companies
 
 ## Quick Start Guide
 
-### 1️⃣ Install Dependencies
+### 1. Install Dependencies
 ```bash
 npm install
+cd backend && npm install
+cd ../frontend && npm install
+cd ../customer-app && npm install
 ```
 
-### 2️⃣ Start Development Servers
+### 2. Start Development Servers
 
-**Terminal 1 - Backend:**
+Terminal 1 - Backend:
 ```bash
 cd backend
 npm run dev
 ```
 
-**Terminal 2 - Frontend:**
+Terminal 2 - ERP Frontend:
 ```bash
 cd frontend
 npm run dev
 ```
 
-### 3️⃣ Open Application
-- Frontend: http://localhost:5173
+Terminal 3 - Standalone Customer App:
+```bash
+cd customer-app
+npm run dev
+```
+
+### 3. Open Applications
+- ERP Frontend (operators only): http://localhost:5173
+- Customer App: http://localhost:5174
 - Backend API: http://localhost:3000
 
-## 📦 Features
+## Features
+- Dashboard with KPIs
+- Inventory Management
+- Procurement Module
+- Sales Order Management
+- Finance and Accounting
+- Quality Control and Traceability
+- Standalone Customer Ordering App
 
-✅ Dashboard with KPIs
-✅ Inventory Management
-✅ Procurement Module  
-✅ Sales Order Management
-✅ Finance & Accounting
-✅ Quality Control & Traceability
+## Technology Stack
+- Frontend: React 18 + TypeScript + Vite
+- Customer App: React 18 + TypeScript + Vite
+- Backend: Express + TypeScript
 
-## 🛠️ Technology Stack
-
-**Frontend:** React 18 + TypeScript + Vite + Tailwind CSS
-**Backend:** Express + TypeScript
-**Database:** PostgreSQL (ready)
-
-## 📁 Project Structure
-
-```
+## Project Structure
+```text
 HERFISH-LEGACY/
-├── frontend/          # React Application
-├── backend/           # Express API
-└── docs/              # Documentation
+|-- frontend/       # ERP React application
+|-- customer-app/   # Standalone customer React application
+|-- backend/        # Express API
+`-- docs/           # Documentation
 ```
 
-## 🚀 Next Steps
+## Next Steps
+1. Keep backend running on port 3000.
+2. Run ERP frontend for internal staff (port 5173).
+3. Run customer app for buyers (port 5174).
+4. Build customer app with `npm --prefix customer-app run build` and publish its dist files on the official website when ready.
 
-1. Install Node.js if not already installed
-2. Run `npm install` to install dependencies
-3. Start backend: `cd backend && npm run dev`
-4. Start frontend: `cd frontend && npm run dev`
-5. Open http://localhost:5173 in your browser
-
----
-
-**HERFISH LEGACY v1.0.0** | Enterprise Fish Supply Chain Management
+## Refined Operating Workflow
+1. Internal team works only in ERP (`frontend`).
+2. Buyers/distributors work only in standalone customer app (`customer-app`).
+3. Orders and payments submitted from customer app sync to backend.
+4. ERP Sales and Finance consume the same backend records for fulfillment and accounting.

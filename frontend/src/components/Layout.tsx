@@ -1,147 +1,174 @@
-import React from 'react'
-import { Outlet, Link, useLocation } from 'react-router-dom'
-import logoSymbol from '../assets/logo_symbol.png'
-import {
-  BellIcon,
-  BoltIcon,
-  BoxIcon,
-  CartIcon,
-  DollarIcon,
-  FileIcon,
-  HomeIcon,
-  MenuIcon,
-  ShieldIcon,
-} from './Icons'
+import React, { useEffect, useState } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import logo from '../assets/logo_symbol.png'
+import { BellIcon, BoxIcon, ChartIcon, FileIcon, HomeIcon, MenuIcon, ShieldIcon, UsersIcon } from './Icons'
+
+const navItems = [
+  { to: '/', label: 'Dashboard', icon: <HomeIcon className="w-4 h-4" /> },
+  { to: '/inventory', label: 'Inventory', icon: <BoxIcon className="w-4 h-4" /> },
+  { to: '/procurement', label: 'Procurement', icon: <UsersIcon className="w-4 h-4" /> },
+  { to: '/sales', label: 'Sales', icon: <FileIcon className="w-4 h-4" /> },
+  { to: '/finance', label: 'Finance', icon: <ChartIcon className="w-4 h-4" /> },
+  { to: '/quality', label: 'Quality', icon: <ShieldIcon className="w-4 h-4" /> },
+]
 
 const Layout: React.FC = () => {
   const location = useLocation()
-  const [mobileNavOpen, setMobileNavOpen] = React.useState(false)
+  const navigate = useNavigate()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [compactMode, setCompactMode] = useState<boolean>(() => window.innerWidth < 1024)
+  const operatorTokenKey = 'herfish_operator_token'
 
-  const navItems = [
-    { path: '/', label: 'Dashboard', icon: <HomeIcon className="w-4 h-4" /> },
-    { path: '/inventory', label: 'Inventory', icon: <BoxIcon className="w-4 h-4" /> },
-    { path: '/procurement', label: 'Procurement', icon: <CartIcon className="w-4 h-4" /> },
-    { path: '/sales', label: 'Sales', icon: <FileIcon className="w-4 h-4" /> },
-    { path: '/finance', label: 'Finance', icon: <DollarIcon className="w-4 h-4" /> },
-    { path: '/quality', label: 'Quality', icon: <ShieldIcon className="w-4 h-4" /> },
-  ]
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 1023px)')
+    const onChange = () => {
+      setCompactMode(mediaQuery.matches)
+      if (!mediaQuery.matches) {
+        setMobileMenuOpen(false)
+      }
+    }
+    onChange()
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', onChange)
+      return () => mediaQuery.removeEventListener('change', onChange)
+    }
+    mediaQuery.addListener(onChange)
+    return () => mediaQuery.removeListener(onChange)
+  }, [])
+  const signOutOperator = async () => {
+    const token = localStorage.getItem(operatorTokenKey) ?? sessionStorage.getItem(operatorTokenKey)
+    try {
+      if (token) {
+        await fetch(`${window.location.protocol}//${window.location.hostname}:3000/api/v1/auth/operator/logout`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      }
+    } catch (_error) {
+      // Ignore network errors during sign out cleanup.
+    } finally {
+      localStorage.removeItem(operatorTokenKey)
+      sessionStorage.removeItem(operatorTokenKey)
+      navigate('/login')
+    }
+  }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50">
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow">
-        <div className="hidden md:flex items-center justify-between px-8 py-4">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-white/80 rounded-xl">
-              <img
-                src={logoSymbol}
-                alt="Herfish Legacy logo"
-                className="h-10 w-10 object-contain"
-              />
+    <div className="min-h-screen bg-gradient-to-b from-slate-100 to-white">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto max-w-[1400px] px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="flex items-center gap-3">
+                <img src={logo} alt="HERFISH LEGACY logo" className="h-10 w-10 rounded-md bg-slate-100 p-1" />
+                <div>
+                  <h1 className="text-sm font-bold leading-none text-slate-900">HERFISH LEGACY</h1>
+                  <p className="text-[11px] text-slate-500">ERP Suite</p>
+                </div>
+              </div>
+              <div className="flex-wrap gap-2" style={{ display: compactMode ? 'none' : 'flex' }}>
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === '/'}
+                    className={({ isActive }) =>
+                      `inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                        isActive
+                          ? 'border-[#032c5a] bg-[#032c5a] text-white'
+                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100'
+                      }`
+                    }
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
             </div>
-            <div className="leading-none" aria-label="HERFISH LEGACY">
-              <span className="block font-extrabold tracking-wide text-xl text-blue-900">HERFISH</span>
-              <span className="block mt-1 text-[11px] font-semibold tracking-[0.42em] text-blue-800">LEGACY</span>
+            <div className="relative flex flex-nowrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((current) => !current)}
+                className="rounded-full bg-slate-100 p-2 text-slate-700"
+                style={{ display: compactMode ? 'inline-flex' : 'none' }}
+                aria-label="Open ERP menu"
+              >
+                <MenuIcon className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                className="rounded-full bg-slate-100 p-2 text-slate-700"
+                style={{ display: compactMode ? 'none' : 'inline-flex' }}
+                aria-label="Notifications"
+              >
+                <BellIcon className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={signOutOperator}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                style={{ display: compactMode ? 'none' : 'block' }}
+              >
+                Sign Out
+              </button>
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#7a0a21] to-[#032c5a] text-xs font-bold text-white" title="ERP Admin">
+                HL
+              </div>
+              {mobileMenuOpen && compactMode && (
+                <div className="absolute right-0 top-12 z-20 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                  {navItems.map((item) => (
+                    <button
+                      key={item.to}
+                      type="button"
+                      onClick={() => {
+                        navigate(item.to)
+                        setMobileMenuOpen(false)
+                      }}
+                      className={`mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium ${
+                        location.pathname === item.to
+                          ? 'bg-[#032c5a] text-white'
+                          : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false)
+                      signOutOperator()
+                    }}
+                    className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-full font-semibold text-lg transition-all duration-200 border-2 ${
-                    isActive ? 'bg-blue-600 text-white shadow-lg border-blue-600' : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50 hover:text-blue-900'
-                  }`}
-                  style={{ boxShadow: isActive ? '0 2px 8px rgba(59,130,246,0.15)' : '0 1px 3px rgba(59,130,246,0.08)' }}
-                >
-                  <span className="text-xs font-bold p-1.5 rounded bg-white/20">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              )
-            })}
-            <button type="button" aria-label="Alerts" className="p-2.5 rounded-full bg-white text-blue-700 border-2 border-blue-200 hover:bg-blue-50 hover:text-blue-900 transition-all duration-200">
-              <BellIcon className="w-5 h-5" />
-            </button>
-            <button type="button" aria-label="Quick Actions" className="p-2.5 rounded-full bg-white text-blue-700 border-2 border-blue-200 hover:bg-blue-50 hover:text-blue-900 transition-all duration-200">
-              <BoltIcon className="w-5 h-5" />
-            </button>
           </div>
         </div>
+      </header>
 
-        <div className="md:hidden flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Open navigation menu"
-              className="text-blue-700 focus:outline-none"
-              onClick={() => setMobileNavOpen((v) => !v)}
-            >
-              <MenuIcon className="w-6 h-6" />
-            </button>
-            <div className="p-1 bg-white/80 rounded-lg">
-              <img
-                src={logoSymbol}
-                alt="Herfish Legacy logo"
-                className="h-7 w-7 object-contain"
-              />
-            </div>
-            <div className="leading-none" aria-label="HERFISH LEGACY">
-              <span className="block font-extrabold text-base text-blue-900 tracking-wide">HERFISH</span>
-              <span className="block mt-0.5 text-[10px] font-semibold tracking-[0.3em] text-blue-800">LEGACY</span>
+      <main className="mx-auto max-w-[1400px] px-3 py-4 sm:px-4 sm:py-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+          <div className="mb-4 items-center justify-between" style={{ display: compactMode ? 'none' : 'flex' }}>
+            <div className="w-full max-w-md rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+              <input className="w-full bg-transparent text-sm outline-none" placeholder="Search modules, orders, invoices..." aria-label="Search ERP data" />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button type="button" aria-label="Alerts" className="p-2 text-gray-600 hover:text-blue-600">
-              <BellIcon className="w-5 h-5" />
-            </button>
-            <button type="button" aria-label="Quick Actions" className="p-2 text-gray-600 hover:text-blue-600">
-              <BoltIcon className="w-5 h-5" />
-            </button>
-          </div>
+          <Outlet />
         </div>
-      </nav>
-
-      {mobileNavOpen && (
-        <div className="md:hidden fixed top-14 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow animate-fade-in">
-          <div className="flex flex-col divide-y divide-gray-100">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center gap-3 px-6 py-4 text-base font-medium transition-all duration-200 ${
-                    isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                  onClick={() => setMobileNavOpen(false)}
-                >
-                  <span className="text-xs font-bold p-1.5 rounded bg-blue-100 text-blue-700">{item.icon}</span>
-                  <span>{item.label}</span>
-                  {isActive && <div className="ml-auto w-2 h-2 rounded-full bg-blue-400" />}
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      <main className="flex-1 flex flex-col overflow-hidden mt-16 md:mt-20">
-        <div className="flex-1 overflow-auto bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50">
-          <div className="min-h-full flex flex-col">
-            <div className="p-2 sm:p-4 md:p-8 max-w-full flex-1">
-              <Outlet />
-            </div>
-            <footer className="px-4 py-3 sm:px-6 border-t border-white/50 bg-white/70 backdrop-blur-sm text-center">
-              <p className="text-xs sm:text-sm font-semibold tracking-wide text-gray-600">
-                MADE BY MOSESTA LIMITED
-              </p>
-            </footer>
-          </div>
-        </div>
+        <footer className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-center text-xs text-slate-600 shadow-sm">
+          <p className="font-semibold tracking-wide text-slate-700">MADE BY MOSESTA LIMITED</p>
+          <p className="mt-1">{'\u00A9'} All rights reserved</p>
+        </footer>
       </main>
     </div>
   )
 }
 
 export default Layout
+

@@ -25,6 +25,17 @@ body {
   line-height: 1.6;
 }
 
+#root {
+  position: relative;
+  isolation: isolate;
+  pointer-events: auto;
+}
+
+/* Prevent third-party/dev overlays from blocking desktop interaction. */
+body > :not(#root):not(script):not(style) {
+  pointer-events: none !important;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Montserrat', 'Segoe UI', 'Helvetica', 'Arial', sans-serif;
   font-weight: 700;

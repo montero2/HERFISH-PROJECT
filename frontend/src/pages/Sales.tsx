@@ -1,155 +1,265 @@
-import React, { useState } from 'react'
-import { ChartIcon, ClockIcon, EyeIcon, FileIcon, PlusIcon, CloseIcon } from '../components/Icons'
+import React, { useEffect, useMemo, useState } from 'react'
+import apiClient from '../services/api'
+import { ChartIcon, CheckCircleIcon, ClockIcon, EyeIcon, FileIcon } from '../components/Icons'
+
+type SalesOrderItem = {
+  inventoryId: string
+  product: string
+  qty: number
+  unitPrice: number
+  lineTotal: number
+}
 
 type SalesOrder = {
   id: string
-  customer: string
-  product: string
-  qty: string
-  amount: string
+  customerName: string
+  customerEmail: string
   date: string
-  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered'
+  status: 'Pending Payment' | 'Paid' | 'Processing' | 'Delivered'
+  paymentStatus: 'Pending' | 'Paid'
+  subtotal: number
+  currency: string
+  items: SalesOrderItem[]
 }
+
+type SalesOrderStatus = SalesOrder['status']
+
+const currencyFormatter = new Intl.NumberFormat('en-KE', {
+  style: 'currency',
+  currency: 'KES',
+  maximumFractionDigits: 2,
+})
 
 const Sales: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [orders, setOrders] = useState<SalesOrder[]>([
-    { id: 'SO-2024-101', customer: 'Fresh Mart Restaurant', product: 'Atlantic Salmon', qty: '100 kg', amount: 'KSh 250,000', date: '2024-02-20', status: 'Shipped' },
-    { id: 'SO-2024-102', customer: 'Coastal Grill House', product: 'Tilapia Fillet', qty: '50 kg', amount: 'KSh 20,000', date: '2024-02-21', status: 'Processing' },
-    { id: 'SO-2024-103', customer: 'Seafood Express', product: 'Shrimp Premium', qty: '25 kg', amount: 'KSh 45,000', date: '2024-02-21', status: 'Pending' },
-    { id: 'SO-2024-104', customer: 'Ocean Foods Ltd', product: 'Crab Meat', qty: '75 kg', amount: 'KSh 90,000', date: '2024-02-19', status: 'Delivered' },
-  ])
-  const [form, setForm] = useState({ customer: '', product: '', qty: '', amount: '', status: 'Pending' as SalesOrder['status'] })
+  const [orders, setOrders] = useState<SalesOrder[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [actionLoadingByOrder, setActionLoadingByOrder] = useState<Record<string, boolean>>({})
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) || order.customer.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || order.status.toLowerCase() === filterStatus.toLowerCase()
-    return matchesSearch && matchesStatus
-  })
-
-  const getStatusColor = (status: string): string => {
-    const colors: { [key: string]: string } = {
-      Delivered: 'bg-green-100 text-green-800',
-      Shipped: 'bg-blue-100 text-blue-800',
-      Processing: 'bg-yellow-100 text-yellow-800',
-      Pending: 'bg-orange-100 text-orange-800',
+  const fetchOrders = async () => {
+    try {
+      setLoading(true)
+      const response = await apiClient.get('/sales/orders')
+      const payload = Array.isArray(response.data?.data) ? (response.data.data as SalesOrder[]) : []
+      setOrders(payload)
+      setError('')
+    } catch (_error) {
+      setOrders([])
+      setError('Could not load sales orders from backend.')
+    } finally {
+      setLoading(false)
     }
-    return colors[status] || 'bg-gray-100 text-gray-800'
   }
 
-  const totalRevenue = orders.reduce((sum, o) => sum + Number(o.amount.replace(/[^0-9]/g, '')), 0)
+  useEffect(() => {
+    fetchOrders()
+  }, [])
+
+  const queueMetrics = useMemo(() => {
+    return {
+      pendingPayment: orders.filter((order) => order.status === 'Pending Payment').length,
+      readyToFulfill: orders.filter((order) => order.status === 'Paid').length,
+      inFulfillment: orders.filter((order) => order.status === 'Processing').length,
+      delivered: orders.filter((order) => order.status === 'Delivered').length,
+    }
+  }, [orders])
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const term = searchTerm.toLowerCase()
+      const matchesSearch =
+        order.id.toLowerCase().includes(term) ||
+        order.customerName.toLowerCase().includes(term) ||
+        order.customerEmail.toLowerCase().includes(term)
+      const matchesStatus = filterStatus === 'all' || order.status.toLowerCase() === filterStatus.toLowerCase()
+      return matchesSearch && matchesStatus
+    })
+  }, [filterStatus, orders, searchTerm])
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Delivered':
+        return 'bg-green-100 text-green-800'
+      case 'Paid':
+        return 'bg-emerald-100 text-emerald-800'
+      case 'Processing':
+        return 'bg-blue-100 text-blue-800'
+      case 'Pending Payment':
+        return 'bg-orange-100 text-orange-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
 
   const stats = [
     { label: 'Total Orders', value: orders.length, icon: <FileIcon className="w-6 h-6" /> },
-    { label: 'Pending Orders', value: orders.filter((o) => o.status === 'Pending').length, icon: <ClockIcon className="w-6 h-6" /> },
-    { label: 'Total Revenue', value: `KSh ${totalRevenue.toLocaleString()}`, icon: <ChartIcon className="w-6 h-6" /> },
+    { label: 'Pending Payment', value: orders.filter((order) => order.paymentStatus === 'Pending').length, icon: <ClockIcon className="w-6 h-6" /> },
+    {
+      label: 'Revenue',
+      value: currencyFormatter.format(orders.reduce((sum, order) => sum + order.subtotal, 0)),
+      icon: <ChartIcon className="w-6 h-6" />,
+    },
   ]
 
-  const handleCreate = (event: React.FormEvent) => {
-    event.preventDefault()
-    if (!form.customer.trim() || !form.product.trim() || !form.qty.trim() || !form.amount.trim()) {
-      return
-    }
+  const statusActionMap: Partial<Record<SalesOrderStatus, { label: string; nextStatus: SalesOrderStatus }>> = {
+    'Pending Payment': { label: 'Verify Payment', nextStatus: 'Paid' },
+    Paid: { label: 'Start Fulfillment', nextStatus: 'Processing' },
+    Processing: { label: 'Mark Delivered', nextStatus: 'Delivered' },
+  }
 
-    const newOrder: SalesOrder = {
-      id: `SO-2024-${String(orders.length + 101)}`,
-      customer: form.customer.trim(),
-      product: form.product.trim(),
-      qty: form.qty.trim(),
-      amount: form.amount.trim(),
-      date: new Date().toISOString().slice(0, 10),
-      status: form.status,
+  const handleStatusUpdate = async (orderId: string, nextStatus: SalesOrderStatus) => {
+    try {
+      setActionLoadingByOrder((current) => ({ ...current, [orderId]: true }))
+      await apiClient.patch(`/sales/orders/${orderId}/status`, { status: nextStatus })
+      await fetchOrders()
+      setError('')
+    } catch (_error) {
+      setError('Could not update order status. Please try again.')
+    } finally {
+      setActionLoadingByOrder((current) => ({ ...current, [orderId]: false }))
     }
-
-    setOrders((current) => [newOrder, ...current])
-    setShowCreateForm(false)
-    setForm({ customer: '', product: '', qty: '', amount: '', status: 'Pending' })
   }
 
   return (
-    <div className="space-y-5 md:space-y-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Sales Order Management</h1>
-          <p className="text-sm sm:text-base text-gray-500 mt-1 sm:mt-2">Manage and track all sales orders efficiently.</p>
+          <h1 className="text-3xl font-bold text-gray-900">Sales Fulfillment Queue</h1>
+          <p className="text-gray-500 mt-2">Process customer orders from payment verification through delivery.</p>
         </div>
-        <button onClick={() => setShowCreateForm((v) => !v)} className="w-full sm:w-auto bg-blue-600 text-white px-4 sm:px-6 py-3 rounded-lg hover:bg-blue-700 transition-all font-medium inline-flex items-center justify-center gap-2">
-          {showCreateForm ? <CloseIcon className="w-4 h-4" /> : <PlusIcon className="w-4 h-4" />} {showCreateForm ? 'Close Form' : 'New Order'}
-        </button>
       </div>
 
-      {showCreateForm && (
-        <form onSubmit={handleCreate} className="bg-white rounded-lg shadow p-4 sm:p-6 grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-          <input placeholder="Customer" value={form.customer} onChange={(e) => setForm((c) => ({ ...c, customer: e.target.value }))} className="px-4 py-2 border border-gray-300 rounded-lg" />
-          <input placeholder="Product" value={form.product} onChange={(e) => setForm((c) => ({ ...c, product: e.target.value }))} className="px-4 py-2 border border-gray-300 rounded-lg" />
-          <input placeholder="Quantity e.g. 25 kg" value={form.qty} onChange={(e) => setForm((c) => ({ ...c, qty: e.target.value }))} className="px-4 py-2 border border-gray-300 rounded-lg" />
-          <input placeholder="Amount e.g. KSh 45,000" value={form.amount} onChange={(e) => setForm((c) => ({ ...c, amount: e.target.value }))} className="px-4 py-2 border border-gray-300 rounded-lg md:col-span-2" />
-          <select value={form.status} onChange={(e) => setForm((c) => ({ ...c, status: e.target.value as SalesOrder['status'] }))} className="px-4 py-2 border border-gray-300 rounded-lg">
-            <option value="Pending">Pending</option>
-            <option value="Processing">Processing</option>
-            <option value="Shipped">Shipped</option>
-            <option value="Delivered">Delivered</option>
-          </select>
-          <button type="submit" className="bg-blue-600 text-white rounded-lg px-4 py-2 md:col-span-3">Save Order</button>
-        </form>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-lg shadow p-4 sm:p-6">
-            <div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">{stat.label}</p><p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1 sm:mt-2">{stat.value}</p></div><span className="text-gray-500">{stat.icon}</span></div>
+          <div key={stat.label} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">{stat.label}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-2">{stat.value}</p>
+              </div>
+              <span className="text-gray-500">{stat.icon}</span>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-          <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg" />
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg">
-            <option value="all">All</option><option value="pending">Pending</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option>
-          </select>
-          <button onClick={() => { setSearchTerm(''); setFilterStatus('all') }} className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg">Reset</button>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+          <p className="text-xs uppercase font-semibold text-orange-700">Awaiting Payment</p>
+          <p className="text-2xl font-bold text-orange-800 mt-2">{queueMetrics.pendingPayment}</p>
+        </div>
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <p className="text-xs uppercase font-semibold text-emerald-700">Paid, Not Started</p>
+          <p className="text-2xl font-bold text-emerald-800 mt-2">{queueMetrics.readyToFulfill}</p>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <p className="text-xs uppercase font-semibold text-blue-700">In Fulfillment</p>
+          <p className="text-2xl font-bold text-blue-800 mt-2">{queueMetrics.inFulfillment}</p>
+        </div>
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+          <p className="text-xs uppercase font-semibold text-green-700">Delivered</p>
+          <p className="text-2xl font-bold text-green-800 mt-2">{queueMetrics.delivered}</p>
         </div>
       </div>
 
-      <div className="md:hidden space-y-3">
-        {filteredOrders.map((order) => (
-          <div key={order.id} className="bg-white rounded-lg shadow p-4 space-y-2">
-            <div className="flex items-start justify-between gap-3">
-              <p className="font-semibold text-sm text-gray-900 break-words">{order.customer}</p>
-              <span className={`px-2.5 py-1 rounded text-[11px] font-semibold whitespace-nowrap ${getStatusColor(order.status)}`}>{order.status}</span>
-            </div>
-            <p className="text-sm text-gray-700">{order.product}</p>
-            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-              <p><span className="font-semibold text-gray-700">ID:</span> {order.id}</p>
-              <p><span className="font-semibold text-gray-700">Qty:</span> {order.qty}</p>
-              <p><span className="font-semibold text-gray-700">Amount:</span> {order.amount}</p>
-              <p><span className="font-semibold text-gray-700">Date:</span> {order.date}</p>
-            </div>
-            <button aria-label="View sales order" className="w-full mt-1 p-2 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50 transition inline-flex items-center justify-center gap-2">
-              <EyeIcon className="w-4 h-4" />
-              <span className="text-sm font-medium">View Order</span>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-2">Search Orders</label>
+            <input
+              type="text"
+              placeholder="Order ID or customer..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-2">Filter by Status</label>
+            <select
+              value={filterStatus}
+              onChange={(event) => setFilterStatus(event.target.value)}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="pending payment">Pending Payment</option>
+              <option value="paid">Paid</option>
+              <option value="processing">Processing</option>
+              <option value="delivered">Delivered</option>
+            </select>
+          </div>
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm('')
+                setFilterStatus('all')
+              }}
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg font-medium"
+            >
+              Reset Filters
             </button>
           </div>
-        ))}
+        </div>
       </div>
 
-      <div className="hidden md:block bg-white rounded-lg shadow overflow-x-auto">
-        <table className="min-w-[700px] w-full text-sm">
-          <thead className="bg-gray-50 border-b"><tr><th className="px-4 py-2 text-left font-semibold">ID</th><th className="px-4 py-2 text-left font-semibold">Customer</th><th className="px-4 py-2 text-left font-semibold">Product</th><th className="px-4 py-2 text-left font-semibold">Qty</th><th className="px-4 py-2 text-left font-semibold">Amount</th><th className="px-4 py-2 text-left font-semibold">Date</th><th className="px-4 py-2 text-left font-semibold">Status</th><th className="px-4 py-2 text-left font-semibold">Action</th></tr></thead>
-          <tbody>
-            {filteredOrders.map((order) => (
-              <tr key={order.id} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2 font-semibold">{order.id}</td><td className="px-4 py-2">{order.customer}</td><td className="px-4 py-2">{order.product}</td><td className="px-4 py-2">{order.qty}</td><td className="px-4 py-2 font-semibold">{order.amount}</td><td className="px-4 py-2">{order.date}</td>
-                <td className="px-4 py-2"><span className={`px-3 py-1 rounded text-xs font-semibold ${getStatusColor(order.status)}`}>{order.status}</span></td>
-                <td className="px-4 py-2 text-center"><button aria-label="View sales order" className="p-1.5 hover:bg-blue-100 rounded transition text-blue-600"><EyeIcon className="w-4 h-4" /></button></td>
+      {loading && <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-gray-600">Loading sales orders...</div>}
+      {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">{error}</div>}
+
+      {!loading && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b">
+                <th className="px-6 py-4 text-left text-sm font-semibold">ID</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold">Customer</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold">Items</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold">Amount</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold">Date</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredOrders.map((order) => (
+                <tr key={order.id} className="border-b hover:bg-gray-50">
+                  <td className="px-6 py-4 font-semibold">{order.id}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <div className="font-medium text-gray-900">{order.customerName}</div>
+                    <div className="text-gray-500">{order.customerEmail}</div>
+                  </td>
+                  <td className="px-6 py-4 text-sm">{order.items.length} item(s)</td>
+                  <td className="px-6 py-4 text-sm font-semibold">{currencyFormatter.format(order.subtotal)}</td>
+                  <td className="px-6 py-4 text-sm">{order.date}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>{order.status}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button type="button" aria-label="View order" className="p-1.5 hover:bg-blue-100 rounded transition text-blue-600">
+                        <EyeIcon className="w-4 h-4" />
+                      </button>
+                      {statusActionMap[order.status] && (
+                        <button
+                          type="button"
+                          disabled={actionLoadingByOrder[order.id]}
+                          onClick={() => handleStatusUpdate(order.id, statusActionMap[order.status]!.nextStatus)}
+                          className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
+                        >
+                          <CheckCircleIcon className="w-4 h-4" />
+                          {actionLoadingByOrder[order.id] ? 'Saving...' : statusActionMap[order.status]!.label}
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "description": "HERFISH LEGACY - Enterprise Resource Planning System for Fish Supply Chain",
   "private": true,
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:erp": "npm --prefix frontend run dev",
+    "dev:customer": "npm --prefix customer-app run dev",
+    "build:erp": "npm --prefix frontend run build",
+    "build:customer": "npm --prefix customer-app run build"
+  },
   "keywords": ["ERP", "Fish Supply", "Inventory", "Supply Chain"],
   "author": "HERFISH LEGACY Team",
   "license": "MIT"
