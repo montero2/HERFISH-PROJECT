@@ -8,6 +8,7 @@ npm install
 cd backend && npm install
 cd ../frontend && npm install
 cd ../customer-app && npm install
+cd ../website && npm install
 ```
 
 ### 2. Start Development Servers
@@ -30,9 +31,16 @@ cd customer-app
 npm run dev
 ```
 
+Terminal 4 - Official Website:
+```bash
+cd website
+npm run dev
+```
+
 ### 3. Open Applications
 - ERP Frontend (operators only): http://localhost:5173
 - Customer App: http://localhost:5174
+- Official Website: http://localhost:5175
 - Backend API: http://localhost:3000
 
 ## Features
@@ -54,6 +62,7 @@ npm run dev
 HERFISH-LEGACY/
 |-- frontend/       # ERP React application
 |-- customer-app/   # Standalone customer React application
+|-- website/        # Official company website
 |-- backend/        # Express API
 `-- docs/           # Documentation
 ```
@@ -62,7 +71,8 @@ HERFISH-LEGACY/
 1. Keep backend running on port 3000.
 2. Run ERP frontend for internal staff (port 5173).
 3. Run customer app for buyers (port 5174).
-4. Build customer app with `npm --prefix customer-app run build` and publish its dist files on the official website when ready.
+4. Run official website for public users (port 5175).
+5. Build customer app with `npm --prefix customer-app run build` and publish its dist files on the official website when ready.
 
 ## Refined Operating Workflow
 1. Internal team works only in ERP (`frontend`).

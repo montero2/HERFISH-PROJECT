@@ -7,8 +7,10 @@
     "dev:backend": "npm --prefix backend run dev",
     "dev:erp": "npm --prefix frontend run dev",
     "dev:customer": "npm --prefix customer-app run dev",
+    "dev:website": "npm --prefix website run dev",
     "build:erp": "npm --prefix frontend run build",
-    "build:customer": "npm --prefix customer-app run build"
+    "build:customer": "npm --prefix customer-app run build",
+    "build:website": "npm --prefix website run build"
   },
   "keywords": ["ERP", "Fish Supply", "Inventory", "Supply Chain"],
   "author": "HERFISH LEGACY Team",

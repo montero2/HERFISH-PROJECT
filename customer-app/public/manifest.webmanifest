@@ -1,0 +1,22 @@
+{
+  "name": "HERFISH LEGACY Customer App",
+  "short_name": "HERFISH Customer",
+  "description": "Order fish products and complete payments synced to HERFISH ERP.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f2f5fb",
+  "theme_color": "#032c5a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -5,6 +5,7 @@ Standalone customer-facing application for buyers to:
 - Browse live product catalog
 - Place orders
 - Pay pending orders
+- Install as app on Android and desktop browsers (PWA)
 
 All actions sync to the same backend data used by ERP Sales and Finance modules.
 
@@ -43,3 +44,9 @@ When the official company website is ready, host these files under a public path
 - `https://herfishlegacy.com/customer-app/`
 
 You can also zip the `dist` folder for direct download links from the website.
+
+## Install on Devices (PWA)
+
+When running on HTTPS (or localhost), users can install the app:
+- Android: open app in Chrome and tap `Install App` or `Add to Home Screen`.
+- Desktop: open app in Chrome/Edge and click browser install icon or `Install App` button.

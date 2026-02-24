@@ -32,6 +32,11 @@ type AuthResponse = {
   customer: Customer
 }
 
+type InstallPromptEvent = Event & {
+  prompt: () => Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
+}
+
 const tokenKey = 'herfish_customer_token'
 const formatter = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' })
 
@@ -50,6 +55,8 @@ export default function App() {
   const [message, setMessage] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [compactMode, setCompactMode] = useState<boolean>(() => window.innerWidth < 1024)
+  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null)
+  const [canInstall, setCanInstall] = useState(false)
 
   const authHeaders = useMemo(() => (token ? { Authorization: `Bearer ${token}` } : undefined), [token])
 
@@ -108,6 +115,26 @@ export default function App() {
     }
     mediaQuery.addListener(onChange)
     return () => mediaQuery.removeListener(onChange)
+  }, [])
+
+  useEffect(() => {
+    const onBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault()
+      setInstallPrompt(event as InstallPromptEvent)
+      setCanInstall(true)
+    }
+    const onInstalled = () => {
+      setInstallPrompt(null)
+      setCanInstall(false)
+      setMessage('Customer app installed successfully on this device.')
+    }
+
+    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+    window.addEventListener('appinstalled', onInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', onInstalled)
+    }
   }, [])
 
   useEffect(() => {
@@ -223,6 +250,22 @@ export default function App() {
     }
   }
 
+  const installCustomerApp = async () => {
+    if (!installPrompt) {
+      setMessage('Install option not available on this browser. Use Add to Home Screen from browser menu.')
+      return
+    }
+    await installPrompt.prompt()
+    const result = await installPrompt.userChoice
+    if (result.outcome === 'accepted') {
+      setMessage('Install request accepted. App will be available from your device home/apps screen.')
+    } else {
+      setMessage('Install canceled.')
+    }
+    setInstallPrompt(null)
+    setCanInstall(false)
+  }
+
   if (!customer) {
     return (
       <div className="customer-root">
@@ -271,6 +314,11 @@ export default function App() {
               <button className="primary-btn" disabled={busy} type="submit">{busy ? 'Please wait...' : authMode === 'login' ? 'Login' : 'Create Account'}</button>
             </form>
             {message && <p className="message">{message}</p>}
+            {canInstall && (
+              <button type="button" className="primary-btn" onClick={installCustomerApp}>
+                Install Customer App
+              </button>
+            )}
           </section>
           <footer className="app-footer">
             <p className="footer-brand">MADE BY MOSESTA LIMITED</p>
@@ -305,6 +353,11 @@ export default function App() {
             </button>
             <div className="user-badge">{customer.name.slice(0, 2).toUpperCase()}</div>
             <button className="ghost-btn desktop-signout" style={{ display: compactMode ? 'none' : 'inline-flex' }} onClick={signOut}>Sign Out</button>
+            {canInstall && (
+              <button className="ghost-btn desktop-signout" style={{ display: compactMode ? 'none' : 'inline-flex' }} onClick={installCustomerApp}>
+                Install App
+              </button>
+            )}
           </div>
         </div>
 
@@ -314,6 +367,7 @@ export default function App() {
             <button className={`mobile-corner-item ${activeView === 'orders' ? 'active' : ''}`} onClick={() => { setActiveView('orders'); setMobileMenuOpen(false) }}>My Orders</button>
             <button className={`mobile-corner-item ${activeView === 'account' ? 'active' : ''}`} onClick={() => { setActiveView('account'); setMobileMenuOpen(false) }}>Account</button>
             <button className="mobile-corner-item" onClick={signOut}>Sign Out</button>
+            {canInstall && <button className="mobile-corner-item" onClick={installCustomerApp}>Install App</button>}
           </div>
         )}
       </header>
