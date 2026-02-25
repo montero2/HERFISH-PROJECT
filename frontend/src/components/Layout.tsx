@@ -16,6 +16,9 @@ const Layout: React.FC = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [operatorNotifications, setOperatorNotifications] = useState<Array<{ id: string; title: string; message: string; read: boolean }>>([])
+  const [notificationPanelOpen, setNotificationPanelOpen] = useState(false)
+  const [lastNotificationId, setLastNotificationId] = useState('')
   const [compactMode, setCompactMode] = useState<boolean>(() => window.innerWidth < 1024)
   const operatorTokenKey = 'herfish_operator_token'
 
@@ -35,6 +38,47 @@ const Layout: React.FC = () => {
     mediaQuery.addListener(onChange)
     return () => mediaQuery.removeListener(onChange)
   }, [])
+
+  useEffect(() => {
+    if (!('Notification' in window)) {
+      return
+    }
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => undefined)
+    }
+  }, [])
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      const token = localStorage.getItem(operatorTokenKey) ?? sessionStorage.getItem(operatorTokenKey)
+      if (!token) {
+        return
+      }
+      try {
+        const response = await fetch(
+          `${window.location.protocol}//${window.location.hostname}:3000/api/v1/notifications/operator`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        )
+        const payload = await response.json()
+        const data = Array.isArray(payload?.data) ? payload.data : []
+        setOperatorNotifications(data)
+        if (data[0]?.id && data[0].id !== lastNotificationId) {
+          setLastNotificationId(data[0].id)
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(data[0].title, { body: data[0].message })
+          }
+        }
+      } catch (_error) {
+        // Ignore polling errors.
+      }
+    }
+
+    fetchNotifications()
+    const timer = window.setInterval(fetchNotifications, 12000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  const unreadCount = operatorNotifications.filter((item) => !item.read).length
   const signOutOperator = async () => {
     const token = localStorage.getItem(operatorTokenKey) ?? sessionStorage.getItem(operatorTokenKey)
     try {
@@ -57,7 +101,7 @@ const Layout: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-b from-slate-100 to-white">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-[1400px] px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
+          <div className={compactMode ? 'flex items-center justify-between gap-3' : 'grid grid-cols-[auto_1fr_auto] items-center gap-3'}>
             <div className="flex min-w-0 items-center gap-4">
               <div className="flex items-center gap-3">
                 <img src={logo} alt="HERFISH LEGACY logo" className="h-10 w-10 rounded-md bg-slate-100 p-1" />
@@ -66,7 +110,9 @@ const Layout: React.FC = () => {
                   <p className="text-[11px] text-slate-500">ERP Suite</p>
                 </div>
               </div>
-              <div className="flex-wrap gap-2" style={{ display: compactMode ? 'none' : 'flex' }}>
+            </div>
+            <div className="justify-center" style={{ display: compactMode ? 'none' : 'flex' }}>
+              <div className="flex flex-wrap justify-center gap-2">
                 {navItems.map((item) => (
                   <NavLink
                     key={item.to}
@@ -86,7 +132,7 @@ const Layout: React.FC = () => {
                 ))}
               </div>
             </div>
-            <div className="relative flex flex-nowrap items-center gap-3">
+            <div className="relative flex flex-nowrap items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen((current) => !current)}
@@ -98,12 +144,18 @@ const Layout: React.FC = () => {
               </button>
               <button
                 type="button"
+                onClick={() => setNotificationPanelOpen((current) => !current)}
                 className="rounded-full bg-slate-100 p-2 text-slate-700"
                 style={{ display: compactMode ? 'none' : 'inline-flex' }}
                 aria-label="Notifications"
               >
                 <BellIcon className="h-5 w-5" />
               </button>
+              {unreadCount > 0 && !compactMode && (
+                <span className="absolute right-[122px] top-0 grid h-5 w-5 place-items-center rounded-full bg-[#7a0a21] text-[10px] font-bold text-white">
+                  {unreadCount}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={signOutOperator}
@@ -145,6 +197,18 @@ const Layout: React.FC = () => {
                   >
                     Sign Out
                   </button>
+                </div>
+              )}
+              {notificationPanelOpen && !compactMode && (
+                <div className="absolute right-0 top-12 z-20 w-72 rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Notifications</p>
+                  {operatorNotifications.length === 0 && <p className="text-sm text-slate-500">No notifications yet.</p>}
+                  {operatorNotifications.slice(0, 6).map((item) => (
+                    <div key={item.id} className="mb-2 rounded-lg border border-slate-200 p-2">
+                      <p className="text-sm font-semibold text-slate-800">{item.title}</p>
+                      <p className="text-xs text-slate-600">{item.message}</p>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

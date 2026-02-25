@@ -12,12 +12,14 @@ import salesRoutes from './routes/sales'
 import financeRoutes from './routes/finance'
 import qualityRoutes from './routes/quality'
 import customerRoutes from './routes/customer'
+import distributorRoutes from './routes/distributor'
+import notificationRoutes from './routes/notifications'
 
 dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 3000
-const baseOrigins = ['http://localhost:5173', 'http://localhost:5174']
+const baseOrigins = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176']
 const envOrigins = `${process.env.FRONTEND_URLS ?? ''},${process.env.FRONTEND_URL ?? ''}`
   .split(',')
   .map((origin) => origin.trim())
@@ -43,7 +45,7 @@ const isAllowedLanOrigin = (origin: string) => {
   try {
     const parsed = new URL(origin)
     const isHttp = parsed.protocol === 'http:' || parsed.protocol === 'https:'
-    const isAllowedPort = parsed.port === '5173' || parsed.port === '5174'
+    const isAllowedPort = ['5173', '5174', '5175', '5176'].includes(parsed.port)
     return isHttp && isAllowedPort && isPrivateIpv4(parsed.hostname)
   } catch (_error) {
     return false
@@ -89,6 +91,8 @@ app.get('/api/v1/status', (req, res) => {
       finance: 'ready',
       quality: 'ready',
       customer: 'ready',
+      distributor: 'ready',
+      notifications: 'ready',
     }
   })
 })
@@ -101,6 +105,8 @@ app.use('/api/v1/sales', salesRoutes)
 app.use('/api/v1/finance', financeRoutes)
 app.use('/api/v1/quality', qualityRoutes)
 app.use('/api/v1/customer', customerRoutes)
+app.use('/api/v1/distributor', distributorRoutes)
+app.use('/api/v1/notifications', notificationRoutes)
 
 // 404 Handler
 app.use((req, res) => {

@@ -2,14 +2,18 @@ import express from 'express'
 import {
   createPaymentForOrder,
   createSalesOrderForCustomer,
+  SalesOrderStatus,
+  getBearerToken,
   getCustomerByToken,
   inventoryItems,
   salesOrders,
+  updateSalesOrderStatus,
 } from '../store/erpStore'
 
 const router: express.Router = express.Router()
 
 type OrderPayload = {
+  pickupPoint?: string
   items?: Array<{
     inventoryId?: string
     qty?: number
@@ -18,10 +22,6 @@ type OrderPayload = {
 
 type PaymentPayload = {
   method?: string
-}
-
-const getBearerToken = (authorizationHeader: string) => {
-  return authorizationHeader.startsWith('Bearer ') ? authorizationHeader.slice(7) : ''
 }
 
 const requireCustomer = (authorizationHeader: string) => {
@@ -63,6 +63,7 @@ router.post('/orders', (req, res) => {
 
   const payload = req.body as OrderPayload
   const items = Array.isArray(payload.items) ? payload.items : []
+  const pickupPoint = (payload.pickupPoint ?? '').trim() || 'Main Pickup Point'
   if (!items.length) {
     res.status(400).json({ status: 'error', message: 'At least one order item is required.' })
     return
@@ -73,6 +74,7 @@ router.post('/orders', (req, res) => {
       customerId: customer.id,
       customerName: customer.name,
       customerEmail: customer.email,
+      pickupPoint,
       items: items.map((entry) => ({
         inventoryId: String(entry.inventoryId ?? ''),
         qty: Number(entry.qty),
@@ -86,6 +88,36 @@ router.post('/orders', (req, res) => {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Could not create order.'
+    res.status(400).json({ status: 'error', message })
+  }
+})
+
+router.patch('/orders/:orderId/confirm-delivery', (req, res) => {
+  const customer = requireCustomer(req.header('authorization') ?? '')
+  if (!customer) {
+    res.status(401).json({ status: 'error', message: 'Unauthorized. Provide a valid bearer token.' })
+    return
+  }
+
+  const order = salesOrders.find((entry) => entry.id === req.params.orderId)
+  if (!order || order.customerId !== customer.id) {
+    res.status(404).json({ status: 'error', message: 'Order not found for this customer.' })
+    return
+  }
+
+  if (order.status !== 'Delivered') {
+    res.status(400).json({ status: 'error', message: 'Order can only be confirmed after delivery to pickup point.' })
+    return
+  }
+
+  try {
+    const updated = updateSalesOrderStatus({
+      orderId: order.id,
+      nextStatus: 'Completed' as SalesOrderStatus,
+    })
+    res.json({ status: 'success', data: updated, message: 'Delivery confirmed by customer.' })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Could not confirm delivery.'
     res.status(400).json({ status: 'error', message })
   }
 })

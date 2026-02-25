@@ -15,7 +15,7 @@ type SalesOrder = {
   customerName: string
   customerEmail: string
   date: string
-  status: 'Pending Payment' | 'Paid' | 'Processing' | 'Delivered'
+  status: 'Pending Payment' | 'Paid' | 'Ready for Dispatch' | 'Packed' | 'Out for Delivery' | 'Delivered' | 'Completed'
   paymentStatus: 'Pending' | 'Paid'
   subtotal: number
   currency: string
@@ -60,8 +60,8 @@ const Sales: React.FC = () => {
   const queueMetrics = useMemo(() => {
     return {
       pendingPayment: orders.filter((order) => order.status === 'Pending Payment').length,
-      readyToFulfill: orders.filter((order) => order.status === 'Paid').length,
-      inFulfillment: orders.filter((order) => order.status === 'Processing').length,
+      awaitingDispatchConfirmation: orders.filter((order) => order.status === 'Paid').length,
+      distributorQueue: orders.filter((order) => ['Ready for Dispatch', 'Packed', 'Out for Delivery'].includes(order.status)).length,
       delivered: orders.filter((order) => order.status === 'Delivered').length,
     }
   }, [orders])
@@ -84,10 +84,16 @@ const Sales: React.FC = () => {
         return 'bg-green-100 text-green-800'
       case 'Paid':
         return 'bg-emerald-100 text-emerald-800'
-      case 'Processing':
+      case 'Ready for Dispatch':
+        return 'bg-indigo-100 text-indigo-800'
+      case 'Packed':
+        return 'bg-cyan-100 text-cyan-800'
+      case 'Out for Delivery':
         return 'bg-blue-100 text-blue-800'
       case 'Pending Payment':
         return 'bg-orange-100 text-orange-800'
+      case 'Completed':
+        return 'bg-slate-200 text-slate-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -105,8 +111,7 @@ const Sales: React.FC = () => {
 
   const statusActionMap: Partial<Record<SalesOrderStatus, { label: string; nextStatus: SalesOrderStatus }>> = {
     'Pending Payment': { label: 'Verify Payment', nextStatus: 'Paid' },
-    Paid: { label: 'Start Fulfillment', nextStatus: 'Processing' },
-    Processing: { label: 'Mark Delivered', nextStatus: 'Delivered' },
+    Paid: { label: 'Release to Distributor', nextStatus: 'Ready for Dispatch' },
   }
 
   const handleStatusUpdate = async (orderId: string, nextStatus: SalesOrderStatus) => {
@@ -151,12 +156,12 @@ const Sales: React.FC = () => {
           <p className="text-2xl font-bold text-orange-800 mt-2">{queueMetrics.pendingPayment}</p>
         </div>
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-          <p className="text-xs uppercase font-semibold text-emerald-700">Paid, Not Started</p>
-          <p className="text-2xl font-bold text-emerald-800 mt-2">{queueMetrics.readyToFulfill}</p>
+          <p className="text-xs uppercase font-semibold text-emerald-700">Awaiting ERP Confirmation</p>
+          <p className="text-2xl font-bold text-emerald-800 mt-2">{queueMetrics.awaitingDispatchConfirmation}</p>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-xs uppercase font-semibold text-blue-700">In Fulfillment</p>
-          <p className="text-2xl font-bold text-blue-800 mt-2">{queueMetrics.inFulfillment}</p>
+          <p className="text-xs uppercase font-semibold text-blue-700">On Distributor Queue</p>
+          <p className="text-2xl font-bold text-blue-800 mt-2">{queueMetrics.distributorQueue}</p>
         </div>
         <div className="bg-green-50 border border-green-200 rounded-xl p-4">
           <p className="text-xs uppercase font-semibold text-green-700">Delivered</p>
@@ -186,8 +191,11 @@ const Sales: React.FC = () => {
               <option value="all">All Status</option>
               <option value="pending payment">Pending Payment</option>
               <option value="paid">Paid</option>
-              <option value="processing">Processing</option>
+              <option value="ready for dispatch">Ready for Dispatch</option>
+              <option value="packed">Packed</option>
+              <option value="out for delivery">Out for Delivery</option>
               <option value="delivered">Delivered</option>
+              <option value="completed">Completed</option>
             </select>
           </div>
           <div className="flex items-end">

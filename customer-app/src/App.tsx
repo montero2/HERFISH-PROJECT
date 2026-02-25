@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { apiClient } from './api'
 import logo from './assets/logo_symbol.png'
+import { BellIcon, BoxIcon, FileIcon, MenuIcon, UsersIcon } from './Icons'
 
 type Customer = {
   id: string
@@ -21,10 +22,11 @@ type CatalogItem = {
 type Order = {
   id: string
   date: string
-  status: 'Pending Payment' | 'Paid' | 'Processing' | 'Delivered'
+  status: 'Pending Payment' | 'Paid' | 'Ready for Dispatch' | 'Packed' | 'Out for Delivery' | 'Delivered' | 'Completed'
   paymentStatus: 'Pending' | 'Paid'
   subtotal: number
   currency: string
+  pickupPoint: string
 }
 
 type AuthResponse = {
@@ -54,11 +56,19 @@ export default function App() {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [notificationOpen, setNotificationOpen] = useState(false)
+  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; read: boolean }>>([])
   const [compactMode, setCompactMode] = useState<boolean>(() => window.innerWidth < 1024)
+  const [pickupPoint, setPickupPoint] = useState('Main Pickup Point')
+  const [lastNotificationId, setLastNotificationId] = useState('')
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null)
   const [canInstall, setCanInstall] = useState(false)
 
   const authHeaders = useMemo(() => (token ? { Authorization: `Bearer ${token}` } : undefined), [token])
+  const buildAuthHeaders = (tokenOverride?: string) => {
+    const activeToken = tokenOverride ?? token
+    return activeToken ? { Authorization: `Bearer ${activeToken}` } : undefined
+  }
 
   const selectedItems = useMemo(
     () =>
@@ -84,20 +94,39 @@ export default function App() {
     setCatalog(data)
   }
 
-  const loadProfile = async () => {
-    if (!authHeaders) {
+  const loadProfile = async (tokenOverride?: string) => {
+    const headers = buildAuthHeaders(tokenOverride)
+    if (!headers) {
       setCustomer(null)
       setOrders([])
       return
     }
 
     const [meResponse, ordersResponse] = await Promise.all([
-      apiClient.get('/auth/me', { headers: authHeaders }),
-      apiClient.get('/customer/orders', { headers: authHeaders }),
+      apiClient.get('/auth/me', { headers }),
+      apiClient.get('/customer/orders', { headers }),
     ])
 
     setCustomer(meResponse.data?.data as Customer)
     setOrders(Array.isArray(ordersResponse.data?.data) ? (ordersResponse.data.data as Order[]) : [])
+
+    try {
+      const notificationsResponse = await apiClient.get('/notifications/customer', { headers })
+      const notificationData = Array.isArray(notificationsResponse.data?.data) ? notificationsResponse.data.data : []
+      setNotifications(notificationData)
+      if (notificationData[0]?.id && notificationData[0].id !== lastNotificationId) {
+        setLastNotificationId(notificationData[0].id)
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification(notificationData[0].title, { body: notificationData[0].message })
+          } catch (_error) {
+            // Ignore browser notification constructor errors.
+          }
+        }
+      }
+    } catch (_error) {
+      // Keep session active even if notifications endpoint is temporarily unavailable.
+    }
   }
 
   useEffect(() => {
@@ -115,6 +144,27 @@ export default function App() {
     }
     mediaQuery.addListener(onChange)
     return () => mediaQuery.removeListener(onChange)
+  }, [])
+
+  useEffect(() => {
+    if (!authHeaders) {
+      return
+    }
+    const timer = window.setInterval(() => {
+      loadProfile().catch(() => {
+        // Ignore polling errors.
+      })
+    }, 12000)
+    return () => window.clearInterval(timer)
+  }, [token])
+
+  useEffect(() => {
+    if (!('Notification' in window)) {
+      return
+    }
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => undefined)
+    }
   }, [])
 
   useEffect(() => {
@@ -184,7 +234,7 @@ export default function App() {
       }
       setCustomer(authData.customer)
       setMessage(authMode === 'register' ? 'Account created successfully.' : 'Login successful.')
-      await Promise.all([loadCatalog(), loadProfile()])
+      await Promise.all([loadCatalog(), loadProfile(authData.token)])
     } catch (_error) {
       setMessage('Authentication failed. Verify your credentials.')
     } finally {
@@ -204,12 +254,28 @@ export default function App() {
 
     try {
       setBusy(true)
-      await apiClient.post('/customer/orders', { items: selectedItems }, { headers: authHeaders })
+      await apiClient.post('/customer/orders', { items: selectedItems, pickupPoint }, { headers: authHeaders })
       setQuantities({})
       setMessage('Order placed and synced to ERP.')
       await Promise.all([loadCatalog(), loadProfile()])
     } catch (_error) {
       setMessage('Order failed. Check quantities or stock and try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const confirmDelivery = async (orderId: string) => {
+    if (!authHeaders) {
+      return
+    }
+    try {
+      setBusy(true)
+      await apiClient.patch(`/customer/orders/${orderId}/confirm-delivery`, {}, { headers: authHeaders })
+      setMessage(`Delivery confirmed for ${orderId}.`)
+      await loadProfile()
+    } catch (_error) {
+      setMessage('Could not confirm delivery yet.')
     } finally {
       setBusy(false)
     }
@@ -264,6 +330,22 @@ export default function App() {
     }
     setInstallPrompt(null)
     setCanInstall(false)
+  }
+
+  const unreadCount = notifications.filter((item) => !item.read).length
+
+  const timelineForStatus = (status: Order['status']) => {
+    const stages: Array<{ key: Order['status']; label: string }> = [
+      { key: 'Pending Payment', label: 'Order Placed' },
+      { key: 'Paid', label: 'Payment Confirmed' },
+      { key: 'Ready for Dispatch', label: 'ERP Confirmed' },
+      { key: 'Packed', label: 'Packed' },
+      { key: 'Out for Delivery', label: 'In Transit' },
+      { key: 'Delivered', label: 'At Pickup Point' },
+      { key: 'Completed', label: 'Collected' },
+    ]
+    const currentIndex = stages.findIndex((entry) => entry.key === status)
+    return stages.map((entry, idx) => ({ ...entry, active: idx <= currentIndex }))
   }
 
   if (!customer) {
@@ -333,24 +415,29 @@ export default function App() {
     <div className="customer-root">
       <header className="top-header">
         <div className="brand-row">
-          <div className="brand-nav-row">
-            <div className="brand-left">
-              <img src={logo} alt="HERFISH LEGACY logo" className="logo-mark" />
-              <div>
-                <h1>HERFISH LEGACY</h1>
-                <p>Customer App</p>
-              </div>
+          <div className="brand-left">
+            <img src={logo} alt="HERFISH LEGACY logo" className="logo-mark" />
+            <div>
+              <h1>HERFISH LEGACY</h1>
+              <p>Customer App</p>
             </div>
-            <nav className="bubble-nav" style={{ display: compactMode ? 'none' : 'flex' }}>
-              <button className={`bubble-item ${activeView === 'catalog' ? 'active' : ''}`} onClick={() => setActiveView('catalog')}>Catalog and Cart</button>
-              <button className={`bubble-item ${activeView === 'orders' ? 'active' : ''}`} onClick={() => setActiveView('orders')}>My Orders</button>
-              <button className={`bubble-item ${activeView === 'account' ? 'active' : ''}`} onClick={() => setActiveView('account')}>Account</button>
-            </nav>
           </div>
-          <div className="header-right desktop-right">
-            <button type="button" className="menu-toggle mobile-menu-only" style={{ display: compactMode ? 'inline-flex' : 'none' }} onClick={() => setMobileMenuOpen((current) => !current)} aria-label="Open customer menu">
-              ☰
+          <nav className="bubble-nav centered-nav" style={{ display: compactMode ? 'none' : 'flex' }}>
+            <button className={`bubble-item ${activeView === 'catalog' ? 'active' : ''}`} onClick={() => setActiveView('catalog')}>
+              <BoxIcon />
+              <span>Catalog and Cart</span>
             </button>
+            <button className={`bubble-item ${activeView === 'orders' ? 'active' : ''}`} onClick={() => setActiveView('orders')}>
+              <FileIcon />
+              <span>My Orders</span>
+            </button>
+            <button className={`bubble-item ${activeView === 'account' ? 'active' : ''}`} onClick={() => setActiveView('account')}>
+              <UsersIcon />
+              <span>Account</span>
+            </button>
+          </nav>
+          <div className="header-right desktop-right">
+            <button type="button" className="menu-toggle mobile-menu-only" style={{ display: compactMode ? 'inline-flex' : 'none' }} onClick={() => setMobileMenuOpen((current) => !current)} aria-label="Open customer menu"><MenuIcon /></button>
             <div className="user-badge">{customer.name.slice(0, 2).toUpperCase()}</div>
             <button className="ghost-btn desktop-signout" style={{ display: compactMode ? 'none' : 'inline-flex' }} onClick={signOut}>Sign Out</button>
             {canInstall && (
@@ -358,6 +445,16 @@ export default function App() {
                 Install App
               </button>
             )}
+            <button
+              type="button"
+              className="menu-toggle"
+              style={{ display: compactMode ? 'none' : 'inline-flex' }}
+              onClick={() => setNotificationOpen((current) => !current)}
+              aria-label="Open notifications"
+            >
+              <BellIcon />
+              {unreadCount > 0 && <span className="sr-only">{` ${unreadCount} unread`}</span>}
+            </button>
           </div>
         </div>
 
@@ -368,6 +465,18 @@ export default function App() {
             <button className={`mobile-corner-item ${activeView === 'account' ? 'active' : ''}`} onClick={() => { setActiveView('account'); setMobileMenuOpen(false) }}>Account</button>
             <button className="mobile-corner-item" onClick={signOut}>Sign Out</button>
             {canInstall && <button className="mobile-corner-item" onClick={installCustomerApp}>Install App</button>}
+            <button className="mobile-corner-item" onClick={() => setNotificationOpen((current) => !current)}>Notifications ({unreadCount})</button>
+          </div>
+        )}
+        {notificationOpen && (
+          <div className="mobile-corner-menu" style={{ display: 'block', right: compactMode ? 16 : 70 }}>
+            {notifications.length === 0 && <p className="hint-text">No notifications yet.</p>}
+            {notifications.slice(0, 6).map((item) => (
+              <div key={item.id} className="catalog-item" style={{ marginBottom: 8 }}>
+                <h4>{item.title}</h4>
+                <p>{item.message}</p>
+              </div>
+            ))}
           </div>
         )}
       </header>
@@ -408,6 +517,12 @@ export default function App() {
                   <p>Selected: {selectedItems.length} item(s)</p>
                   <p className="total">Total {formatter.format(total)}</p>
                 </div>
+                <select value={pickupPoint} onChange={(event) => setPickupPoint(event.target.value)}>
+                  <option>Main Pickup Point</option>
+                  <option>Beach Market Pickup</option>
+                  <option>Town Center Pickup</option>
+                  <option>Cold Room Hub Pickup</option>
+                </select>
                 <button className="primary-btn" onClick={placeOrder} disabled={busy}>Place Order</button>
               </div>
             </section>
@@ -426,12 +541,24 @@ export default function App() {
                     <div>
                       <strong>{order.id}</strong>
                       <p>{order.date}</p>
+                      <p>Pickup: {order.pickupPoint}</p>
+                      <p>Status: {order.status}</p>
                       <p>{formatter.format(order.subtotal)}</p>
+                      <div className="timeline">
+                        {timelineForStatus(order.status).map((step) => (
+                          <span key={`${order.id}-${step.key}`} className={`timeline-step ${step.active ? 'active' : ''}`}>
+                            {step.label}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                     <div className="order-right">
                       <span className={order.paymentStatus === 'Paid' ? 'tag paid' : 'tag pending'}>{order.paymentStatus}</span>
                       {order.paymentStatus === 'Pending' && (
                         <button className="primary-btn" disabled={busy} onClick={() => payOrder(order.id)}>Pay Now</button>
+                      )}
+                      {order.status === 'Delivered' && (
+                        <button className="primary-btn" disabled={busy} onClick={() => confirmDelivery(order.id)}>Confirm Pickup</button>
                       )}
                     </div>
                   </div>
@@ -459,3 +586,4 @@ export default function App() {
     </div>
   )
 }
+

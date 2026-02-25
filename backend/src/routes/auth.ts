@@ -2,12 +2,13 @@ import express from 'express'
 import {
   createSessionToken,
   customerAccounts,
+  distributorSessionByToken,
   getCustomerByToken,
+  operatorSessionByToken,
   sessionByToken,
 } from '../store/erpStore'
 
 const router: express.Router = express.Router()
-const operatorSessionByToken = new Map<string, string>()
 
 type AuthPayload = {
   name?: string
@@ -190,6 +191,76 @@ router.post('/operator/logout', (req, res) => {
   res.json({
     status: 'success',
     message: 'Operator session ended.',
+  })
+})
+
+router.post('/distributor/login', (req, res) => {
+  const payload = req.body as AuthPayload
+  const email = (payload.email ?? '').trim().toLowerCase()
+  const password = (payload.password ?? '').trim()
+
+  const distributorEmail = (process.env.DISTRIBUTOR_EMAIL ?? 'distributor@herfishlegacy.com').trim().toLowerCase()
+  const distributorPassword = (process.env.DISTRIBUTOR_PASSWORD ?? 'distributor123').trim()
+  const distributorName = (process.env.DISTRIBUTOR_NAME ?? 'HERFISH Distributor').trim()
+
+  if (!email || !password) {
+    res.status(400).json({ status: 'error', message: 'Email and password are required.' })
+    return
+  }
+
+  if (email !== distributorEmail || password !== distributorPassword) {
+    res.status(401).json({ status: 'error', message: 'Invalid distributor credentials.' })
+    return
+  }
+
+  const token = createSessionToken()
+  distributorSessionByToken.set(token, distributorEmail)
+
+  res.json({
+    status: 'success',
+    message: 'Distributor login successful.',
+    data: {
+      token,
+      distributor: {
+        id: 'DIST-001',
+        name: distributorName,
+        email: distributorEmail,
+      },
+    },
+  })
+})
+
+router.get('/distributor/me', (req, res) => {
+  const authorization = req.header('authorization') ?? ''
+  const token = getBearerToken(authorization)
+
+  if (!token || !distributorSessionByToken.has(token)) {
+    res.status(401).json({ status: 'error', message: 'Invalid or expired distributor token.' })
+    return
+  }
+
+  const distributorEmail = (process.env.DISTRIBUTOR_EMAIL ?? 'distributor@herfishlegacy.com').trim().toLowerCase()
+  const distributorName = (process.env.DISTRIBUTOR_NAME ?? 'HERFISH Distributor').trim()
+
+  res.json({
+    status: 'success',
+    data: {
+      id: 'DIST-001',
+      name: distributorName,
+      email: distributorEmail,
+    },
+  })
+})
+
+router.post('/distributor/logout', (req, res) => {
+  const authorization = req.header('authorization') ?? ''
+  const token = getBearerToken(authorization)
+  if (token) {
+    distributorSessionByToken.delete(token)
+  }
+  res.json({
+    status: 'success',
+    message: 'Distributor session ended.',
   })
 })
 

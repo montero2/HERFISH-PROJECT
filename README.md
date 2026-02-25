@@ -3,6 +3,7 @@
 ## Applications
 - ERP App (internal operators only): `frontend/` on `http://localhost:5173`
 - Customer App (standalone): `customer-app/` on `http://localhost:5174`
+- Distributor App (standalone): `distributor-app/` on `http://localhost:5176`
 - Official Website: `website/` on `http://localhost:5175`
 - Backend API: `backend/` on `http://localhost:3000`
 
@@ -12,6 +13,7 @@
 cd backend && npm install
 cd ../frontend && npm install
 cd ../customer-app && npm install
+cd ../distributor-app && npm install
 cd ../website && npm install
 
 # run backend
@@ -22,6 +24,9 @@ cd ../frontend && npm run dev
 
 # run standalone customer app
 cd ../customer-app && npm run dev
+
+# run standalone distributor app
+cd ../distributor-app && npm run dev
 
 # run official website
 cd ../website && npm run dev
@@ -42,6 +47,29 @@ Publish `customer-app/dist/` on your official company website when ready.
   - `VITE_WINDOWS_INSTALLER_URL`
   - `VITE_MAC_INSTALLER_URL`
 
+## Notification Providers (Email + SMS)
+
+Set these in `backend/.env` to enable external notifications:
+
+```env
+EMAIL_NOTIFICATIONS_ENABLED=true
+SMS_NOTIFICATIONS_ENABLED=true
+
+SENDGRID_API_KEY=your_sendgrid_api_key
+EMAIL_FROM=alerts@herfishlegacy.com
+
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_FROM_NUMBER=+1XXXXXXXXXX
+
+OPERATOR_PHONE=+2547XXXXXXXX
+DISTRIBUTOR_PHONE=+2547XXXXXXXX
+```
+
+Notes:
+- Customer emails use the registered customer email.
+- Customer SMS uses customer phone in backend store (extend customer profile for production).
+
 ## Access Model and Workflow
 - ERP is for business operators only and does not include customer access screens.
 - Customers use only the standalone customer app downloaded from the official company website.
@@ -57,6 +85,7 @@ Publish `customer-app/dist/` on your official company website when ready.
 HERFISH-LEGACY/
 |-- frontend/        # ERP React app
 |-- customer-app/    # Standalone customer React app
+|-- distributor-app/ # Standalone distributor React app
 |-- website/         # Official company website
 |-- backend/         # Express API
 `-- docs/            # Documentation
