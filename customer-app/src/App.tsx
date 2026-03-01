@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { apiClient } from './api'
 import logo from './assets/logo_symbol.png'
 import { BellIcon, BoxIcon, FileIcon, MenuIcon, UsersIcon } from './Icons'
@@ -207,7 +207,7 @@ export default function App() {
     bootstrap()
   }, [token])
 
-  const handleAuth = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleAuth = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const email = authForm.email.trim().toLowerCase()
     const password = authForm.password.trim()

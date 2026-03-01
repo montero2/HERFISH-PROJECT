@@ -1,6 +1,13 @@
-# HERFISH LEGACY - Fish Supply ERP System
+# MOSESTA LIMITED - Fish Supply ERP System
 
 ## Quick Start Guide
+
+### 0. Navigate to Project Root
+
+All commands should be run from the project's root directory. Open your terminal and navigate to it:
+```bash
+cd "C:\Users\LENOVO\Desktop\MOSESTA LIMITED\MOSESTA LIMITED"
+```
 
 ### 1. Install Dependencies
 ```bash
@@ -67,7 +74,7 @@ npm run dev
 
 ## Project Structure
 ```text
-HERFISH-LEGACY/
+MOSESTA LIMITED/
 |-- frontend/       # ERP React application
 |-- customer-app/   # Standalone customer React application
 |-- distributor-app/# Standalone distributor React application
