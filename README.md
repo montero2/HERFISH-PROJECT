@@ -1,4 +1,4 @@
-# MOSESTA LIMITED - Getting Started
+# HERFISH LEGACY - Getting Started
 
 ## Applications
 - ERP App (internal operators only): `frontend/` on `http://localhost:5173`
@@ -56,7 +56,7 @@ EMAIL_NOTIFICATIONS_ENABLED=true
 SMS_NOTIFICATIONS_ENABLED=true
 
 SENDGRID_API_KEY=your_sendgrid_api_key
-EMAIL_FROM=alerts@mosestalimited.co.ke
+EMAIL_FROM=alerts@herfishlegacy.com
 
 TWILIO_ACCOUNT_SID=your_twilio_account_sid
 TWILIO_AUTH_TOKEN=your_twilio_auth_token
@@ -72,8 +72,7 @@ Notes:
 
 ## Access Model and Workflow
 - ERP is for business operators only and does not include customer access screens.
-- **Privileged Access**: ERP and Distributor apps are installed on Administrator/Distributor devices (Computer/Phone) and require privileged access.
-- **Public Access**: Customers use the Official Website or the standalone Customer App.
+- Customers use only the standalone customer app downloaded from the official company website.
 - Customer actions flow into ERP through shared backend APIs:
 1. Customer signs in to the standalone app.
 2. Customer browses catalog and places order.
@@ -81,17 +80,9 @@ Notes:
 4. Order appears in ERP Sales for fulfillment.
 5. Invoice and payment appear in ERP Finance for reconciliation.
 
-## Order Fulfillment Lifecycle
-1. **Order**: Customer places order via Website or Customer App.
-2. **Approval**: Manager/Operator reviews and approves the order in the ERP System.
-3. **Dispatch**: Once approved, the order reflects in the Distributor App.
-4. **Shipping**: Distributor fulfills and ships the order.
-5. **Delivery**: Customer marks the order as "Delivered" in the Customer App.
-6. **Sync**: Delivery status updates automatically across Distributor App and ERP.
-
 ## Project Structure
 ```text
-MOSESTA LIMITED/
+HERFISH-LEGACY/
 |-- frontend/        # ERP React app
 |-- customer-app/    # Standalone customer React app
 |-- distributor-app/ # Standalone distributor React app

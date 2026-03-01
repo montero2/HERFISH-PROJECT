@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { distributorApi } from './api'
 import logo from './assets/logo_symbol.png'
 
@@ -104,7 +104,7 @@ export default function App() {
     return () => window.clearInterval(timer)
   }, [token])
 
-  const login = async (event: FormEvent<HTMLFormElement>) => {
+  const login = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     try {
       setBusy(true)
